@@ -3,10 +3,9 @@ package tracker
 import (
 	"context"
 	"errors"
+	"github.com/anacrolix/dht/v2/krpc"
 	"net/http"
 	"net/url"
-
-	"github.com/anacrolix/dht/v2/krpc"
 )
 
 // Marshalled as binary by the UDP client, so be careful making changes.
@@ -51,13 +50,14 @@ var (
 )
 
 type Announce struct {
-	TrackerUrl string
-	Request    AnnounceRequest
-	HostHeader string
-	HTTPProxy  func(*http.Request) (*url.URL, error)
-	ServerName string
-	UserAgent  string
-	UdpNetwork string
+	IsScionAnnounce bool
+	TrackerUrl      string
+	Request         AnnounceRequest
+	HostHeader      string
+	HTTPProxy       func(*http.Request) (*url.URL, error)
+	ServerName      string
+	UserAgent       string
+	UdpNetwork      string
 	// If the port is zero, it's assumed to be the same as the Request.Port.
 	ClientIp4 krpc.NodeAddr
 	// If the port is zero, it's assumed to be the same as the Request.Port.

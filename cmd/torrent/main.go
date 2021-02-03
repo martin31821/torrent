@@ -322,11 +322,11 @@ func mainErr() error {
 	// if !flags.Seed {
 	clientConfig.PerformanceBenchmarkClient = flags.PClient
 	clientConfig.DisableIPv6 = true
-	clientConfig.PerformanceBenchmark = true
+	//clientConfig.PerformanceBenchmark = true
 	clientConfig.NoDHT = true
 	if flags.PClient {
 		clientConfig.NoUpload = true
-		clientConfig.DisableTrackers = true
+		//clientConfig.DisableTrackers = true
 		clientConfig.DisablePEX = true
 		clientConfig.NoDHT = true
 	} else {
@@ -395,7 +395,7 @@ func mainErr() error {
 		clientConfig.RemoteScionAddrs = peers
 		clientConfig.RemoteScionPaths = sPaths
 		clientConfig.DisableAcceptRateLimiting = true
-		clientConfig.DisableTrackers = true
+		//clientConfig.DisableTrackers = true
 		if flags.ScionOnly {
 			clientConfig.DisableTCP = true
 			clientConfig.DisableUTP = true

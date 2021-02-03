@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/netsec-ethz/scion-apps/pkg/shttp"
 	"io"
 	"math"
 	"net"
@@ -103,16 +104,8 @@ func setAnnounceParams(_url *url.URL, ar *AnnounceRequest, opts Announce) {
 	_url.RawQuery = q.Encode()
 }
 
-func announceHTTP(opt Announce, _url *url.URL) (ret AnnounceResponse, err error) {
-	_url = httptoo.CopyURL(_url)
-	setAnnounceParams(_url, &opt.Request, opt)
-	req, err := http.NewRequest("GET", _url.String(), nil)
-	req.Header.Set("User-Agent", opt.UserAgent)
-	req.Host = opt.HostHeader
-	if opt.Context != nil {
-		req = req.WithContext(opt.Context)
-	}
-	resp, err := (&http.Client{
+func defaultHttpClient(opt Announce) (client *http.Client) {
+	return &http.Client{
 		Timeout: time.Second * 15,
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
@@ -125,7 +118,33 @@ func announceHTTP(opt Announce, _url *url.URL) (ret AnnounceResponse, err error)
 				ServerName:         opt.ServerName,
 			},
 		},
-	}).Do(req)
+	}
+}
+
+func scionHttpClient(_ Announce) (client *http.Client) {
+	return &http.Client{
+		Timeout:   time.Second * 15,
+		Transport: shttp.NewRoundTripper(&tls.Config{InsecureSkipVerify: true}, nil),
+	}
+}
+
+func getHttpClient(opt Announce) (client *http.Client) {
+	if opt.IsScionAnnounce {
+		return scionHttpClient(opt)
+	}
+	return defaultHttpClient(opt)
+}
+
+func announceHTTP(opt Announce, _url *url.URL) (ret AnnounceResponse, err error) {
+	_url = httptoo.CopyURL(_url)
+	setAnnounceParams(_url, &opt.Request, opt)
+	req, err := http.NewRequest("GET", _url.String(), nil)
+	req.Header.Set("User-Agent", opt.UserAgent)
+	req.Host = opt.HostHeader
+	if opt.Context != nil {
+		req = req.WithContext(opt.Context)
+	}
+	resp, err := getHttpClient(opt).Do(req)
 	if err != nil {
 		return
 	}

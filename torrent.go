@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"text/tabwriter"
 	"time"
@@ -1257,10 +1258,27 @@ func (t *Torrent) seeding() bool {
 	return true
 }
 
-func (t *Torrent) startScrapingTracker(_url string) {
-	if _url == "" {
+func isScionUrl(url string) bool {
+	// very cheap way to differntiate "normal" urls with urls containing a scion AS/ISD
+	return strings.ContainsAny(url, "[") && strings.ContainsAny(url, "]")
+}
+
+func (t *Torrent) handleScionTracker(_url string) {
+	if _, ok := t.trackerAnnouncers[_url]; ok {
 		return
 	}
+	newAnnouncer := &trackerScraper{
+		sUrl: &_url,
+		t:    t,
+	}
+	if t.trackerAnnouncers == nil {
+		t.trackerAnnouncers = make(map[string]*trackerScraper)
+	}
+	t.trackerAnnouncers[_url] = newAnnouncer
+	go newAnnouncer.Run()
+}
+
+func (t *Torrent) handleDefaultTracker(_url string) {
 	u, err := url.Parse(_url)
 	if err != nil {
 		// URLs with a leading '*' appear to be a uTorrent convention to
@@ -1295,6 +1313,17 @@ func (t *Torrent) startScrapingTracker(_url string) {
 	}
 	t.trackerAnnouncers[_url] = newAnnouncer
 	go newAnnouncer.Run()
+}
+
+func (t *Torrent) startScrapingTracker(_url string) {
+	if _url == "" {
+		return
+	}
+	if isScionUrl(_url) {
+		t.handleScionTracker(_url)
+		return
+	}
+	t.handleDefaultTracker(_url)
 }
 
 // Adds and starts tracker scrapers for tracker URLs that aren't already

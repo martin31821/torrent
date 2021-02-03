@@ -16,6 +16,7 @@ import (
 // Announces a torrent to a tracker at regular intervals, when peers are
 // required.
 type trackerScraper struct {
+	sUrl         *string
 	u            url.URL
 	t            *Torrent
 	lastAnnounce trackerAnnounceResult
@@ -95,6 +96,13 @@ func (me *trackerScraper) trackerUrl(ip net.IP) string {
 // Return how long to wait before trying again. For most errors, we return 5
 // minutes, a relatively quick turn around for DNS changes.
 func (me *trackerScraper) announce(event tracker.AnnounceEvent) (ret trackerAnnounceResult) {
+	if me.sUrl != nil {
+		return me.announceScion(event)
+	}
+	return me.announceDefault(event)
+}
+
+func (me *trackerScraper) announceDefault(event tracker.AnnounceEvent) (ret trackerAnnounceResult) {
 	defer func() {
 		ret.Completed = time.Now()
 	}()
@@ -109,15 +117,42 @@ func (me *trackerScraper) announce(event tracker.AnnounceEvent) (ret trackerAnno
 	me.t.cl.unlock()
 	//log.Printf("announcing %s %s to %q", me.t, req.Event, me.u.String())
 	res, err := tracker.Announce{
-		HTTPProxy:  me.t.cl.config.HTTPProxy,
-		UserAgent:  me.t.cl.config.HTTPUserAgent,
-		TrackerUrl: me.trackerUrl(ip),
-		Request:    req,
-		HostHeader: me.u.Host,
-		ServerName: me.u.Hostname(),
-		UdpNetwork: me.u.Scheme,
-		ClientIp4:  krpc.NodeAddr{IP: me.t.cl.config.PublicIp4},
-		ClientIp6:  krpc.NodeAddr{IP: me.t.cl.config.PublicIp6},
+		IsScionAnnounce: false,
+		HTTPProxy:       me.t.cl.config.HTTPProxy,
+		UserAgent:       me.t.cl.config.HTTPUserAgent,
+		TrackerUrl:      me.trackerUrl(ip),
+		Request:         req,
+		HostHeader:      me.u.Host,
+		ServerName:      me.u.Hostname(),
+		UdpNetwork:      me.u.Scheme,
+		ClientIp4:       krpc.NodeAddr{IP: me.t.cl.config.PublicIp4},
+		ClientIp6:       krpc.NodeAddr{IP: me.t.cl.config.PublicIp6},
+	}.Do()
+	if err != nil {
+		ret.Err = fmt.Errorf("error announcing: %s", err)
+		return
+	}
+	me.t.AddPeers(Peers(nil).AppendFromTracker(res.Peers))
+	ret.NumPeers = len(res.Peers)
+	ret.Interval = time.Duration(res.Interval) * time.Second
+	return
+}
+
+func (me *trackerScraper) announceScion(event tracker.AnnounceEvent) (ret trackerAnnounceResult) {
+	defer func() {
+		ret.Completed = time.Now()
+	}()
+	ret.Interval = time.Minute
+	me.t.cl.lock()
+	req := me.t.announceRequest(event)
+	me.t.cl.unlock()
+	//log.Printf("announcing %s %s to %q", me.t, req.Event, me.u.String())
+	res, err := tracker.Announce{
+		IsScionAnnounce: true,
+		TrackerUrl:      *me.sUrl,
+		Request:         req,
+		ClientIp4:       krpc.NodeAddr{IP: me.t.cl.config.PublicIp4},
+		ClientIp6:       krpc.NodeAddr{IP: me.t.cl.config.PublicIp6},
 	}.Do()
 	if err != nil {
 		ret.Err = fmt.Errorf("error announcing: %s", err)
