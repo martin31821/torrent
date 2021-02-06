@@ -9,7 +9,7 @@ import (
 
 type Peer struct {
 	IsScionPeer bool
-	udpAddr     *snet.UDPAddr
+	ScionAddr   *snet.UDPAddr
 	IP          net.IP
 	Port        int
 	ID          []byte
@@ -38,7 +38,7 @@ func (p *Peer) parseScionPeer(d map[string]interface{}) {
 	udpAddr, err := snet.ParseUDPAddr(udpStr)
 	if err != nil {
 		p.IsScionPeer = true
-		p.udpAddr = udpAddr
+		p.ScionAddr = udpAddr
 	}
 	if _, ok := d["peer id"]; ok {
 		p.ID = []byte(d["peer id"].(string))

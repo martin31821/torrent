@@ -23,13 +23,33 @@ func (me *Peers) AppendFromPex(nas []krpc.NodeAddr, fs []peer_protocol.PexPeerFl
 
 func (ret Peers) AppendFromTracker(ps []tracker.Peer) Peers {
 	for _, p := range ps {
-		_p := Peer{
-			IP:     p.IP,
-			Port:   p.Port,
-			Source: peerSourceTracker,
-		}
+		_p := toPeer(p)
 		copy(_p.Id[:], p.ID)
 		ret = append(ret, _p)
 	}
 	return ret
+}
+
+func toPeer(p tracker.Peer) Peer {
+	if p.IsScionPeer {
+		return toScionPeer(p)
+	}
+	return toDefaultPeer(p)
+}
+
+func toDefaultPeer(p tracker.Peer) Peer {
+	return Peer{
+		IsScion: false,
+		IP:      p.IP,
+		Port:    p.Port,
+		Source:  peerSourceTracker,
+	}
+}
+
+func toScionPeer(p tracker.Peer) Peer {
+	return Peer{
+		IsScion:   true,
+		ScionAddr: p.ScionAddr,
+		Source:    peerSourceTracker,
+	}
 }
