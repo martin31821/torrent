@@ -1794,6 +1794,7 @@ func (t *Torrent) initiateConn(peer Peer) {
 	if t.addrActive(addrString) {
 		return
 	}
+	t.logger.Printf("initiate connection - addrString %v; isScion - %v", addrString, peer.IsScion)
 	t.halfOpen[addrString] = peer
 	go t.cl.outgoingConnection(t, addr, peer.Source, peer.ScionPath)
 }
