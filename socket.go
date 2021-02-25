@@ -177,7 +177,7 @@ func (s *scionSocket) dial(ctx context.Context, addr net.Addr) (net.Conn, error)
 		return nil, fmt.Errorf("sdial: invalid addr type: %s", addr.String())
 	}
 
-	sess, err := appquic.DialAddr(snetAddr, "127.0.0.1:42425", scion_torrent.TLSCfg, &quic.Config{
+	sess, err := appquic.DialAddrUDP(snetAddr, "127.0.0.1:42425", scion_torrent.TLSCfg, &quic.Config{
 		KeepAlive: true,
 	})
 
@@ -222,7 +222,7 @@ func listenScion(address *snet.UDPAddr) (s socket, err error) {
 		return nil, err
 	}
 
-	conn, err := appnet.ListenPort(uint16(address.Host.Port))
+	conn, err := appnet.ListenPortUDP(uint16(address.Host.Port))
 	if err != nil {
 		return nil, err
 	}

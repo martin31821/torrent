@@ -53,5 +53,6 @@ require (
 go 1.13
 
 replace github.com/boltdb/bolt => github.com/etcd-io/bbolt v1.3.3
-
+replace github.com/scionproto/scion => /home/marten/go/src/github.com/martenwallewein/scion
+replace github.com/netsec-ethz/scion-apps => /home/marten/go/src/github.com/martenwallewein/scion-apps
 // replace github.com/scionproto/scion => github.com/matzf/scion v0.2.1-0.20190724102211-486e005da176

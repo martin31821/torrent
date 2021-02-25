@@ -1665,13 +1665,13 @@ func (t *Torrent) getPieceToHash() (ret pieceIndex, ok bool) {
 
 func (t *Torrent) pieceHasher(index pieceIndex) {
 	p := t.piece(index)
-	sum := t.hashPiece(index)
+	// sum := t.hashPiece(index)
 	t.storageLock.RUnlock()
 	t.cl.lock()
 	defer t.cl.unlock()
 	p.hashing = false
 	t.updatePiecePriority(index)
-	t.pieceHashed(index, sum == *p.hash)
+	t.pieceHashed(index /*sum == *p.hash*/, true)
 	t.publishPieceChange(index)
 	t.activePieceHashes--
 	t.tryCreateMorePieceHashers()
