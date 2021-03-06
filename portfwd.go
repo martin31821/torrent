@@ -29,10 +29,12 @@ func (cl *Client) forwardPort() {
 	cl.lock()
 	cl.logger.Printf("discovered %d upnp devices", len(ds))
 	port := cl.incomingPeerPort()
+	cl.logger.WithValues(log.Info).Printf("incomingPeerPort %d", port)
 	cl.unlock()
 	for _, d := range ds {
 		go cl.addPortMapping(d, upnp.TCP, port)
 		go cl.addPortMapping(d, upnp.UDP, port)
 	}
+	cl.logger.WithValues(log.Info).Printf("port forwarding done")
 	cl.lock()
 }
