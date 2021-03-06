@@ -37,9 +37,11 @@ func (p *Peer) parseScionPeer(d map[string]interface{}) {
 	udpStr := fmt.Sprintf("%s,[%s]:%d", d["ia"], d["ip"], d["port"])
 	udpAddr, err := snet.ParseUDPAddr(udpStr)
 	if err != nil {
-		p.IsScionPeer = true
-		p.ScionAddr = udpAddr
+		fmt.Printf("parseScionPeer err %v", err)
+		return
 	}
+	p.IsScionPeer = true
+	p.ScionAddr = udpAddr
 	if _, ok := d["peer id"]; ok {
 		p.ID = []byte(d["peer id"].(string))
 	}
